@@ -41,8 +41,8 @@ def preprocess_image(img):
 
     blur = cv2.GaussianBlur(gray, (5,5),0)
     thresh = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
-
-    return thresh
+    img = cv2.equalizeHist(thresh)
+    return img
 
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
