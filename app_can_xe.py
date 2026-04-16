@@ -25,41 +25,41 @@ def load_ai_model():
     return easyocr.Reader(['vi', 'en'], gpu=False, verbose=False)
 
 reader = load_ai_model()
-
-#giam phan giai
+#
 def preprocess_image(img):
     h, w = img.shape[:2]
 
-    # 1. Resize nhỏ lại (giảm tải)
+    # 1. Resize
     max_w = 960
     if w > max_w:
         ratio = max_w / w
         img = cv2.resize(img, (int(w * ratio), int(h * ratio)))
 
-    # 2. Grayscale
+    # 2. Cắt vùng trung tâm (loại bỏ nền bàn vàng)
+    img = img[int(h*0.15):int(h*0.9), int(w*0.05):int(w*0.95)]
+
+    # 3. Grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 3. Tăng contrast mạnh hơn (CLAHE)
-    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8,8))
+    # 4. CLAHE (tăng tương phản mạnh)
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
     gray = clahe.apply(gray)
 
-    # 4. Blur nhẹ
+    # 5. Blur nhẹ
     blur = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # 5. Adaptive threshold (giữ chữ tốt hơn)
-    thresh = cv2.adaptiveThreshold(
-        blur,
-        255,
-        cv2.ADAPTIVE_THRESH_MEAN_C,
-        cv2.THRESH_BINARY,
-        11, 2
+    # 6. Threshold chuẩn cho giấy trắng + nền nhiễu
+    _, thresh = cv2.threshold(
+        blur, 
+        0, 255, 
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU
     )
 
-    # 6. Làm chữ đậm hơn
-    kernel = np.ones((1,1), np.uint8)
-    dilate = cv2.dilate(thresh, kernel, iterations=1)
+    # 7. Làm chữ đậm hơn
+    kernel = np.ones((2,2), np.uint8)
+    result = cv2.dilate(thresh, kernel, iterations=1)
 
-    return dilate
+    return result
 
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
