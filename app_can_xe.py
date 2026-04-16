@@ -184,5 +184,4 @@ if st.session_state.data_history:
         st.session_state.data_history = []
         st.rerun()
 else:
-    st.write("Chưa có dữ liệu nào được lưu.")
-#C:\Users\VP\AppData\Local\Programs\Python\Python311\python.exe -m streamlit run c:/Users/VP/Documents/Anaconda_XLA/phieu_can_test/app_can_xe.py                                         
+    st.write("Chưa có dữ liệu nào được lưu.")                                      
