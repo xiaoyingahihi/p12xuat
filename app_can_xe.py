@@ -128,8 +128,8 @@ uploaded_file = st.sidebar.file_uploader("Chọn ảnh phiếu cân", type=["jpg
 if uploaded_file is not None:
 
     # giới hạn size
-    if uploaded_file.size > 2 * 1024 * 1024:
-        st.error("Ảnh quá nặng (>2MB)")
+    if uploaded_file.size > 5 * 1024 * 1024:
+        st.error("Ảnh quá nặng (>5MB)")
         st.stop()
 
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
