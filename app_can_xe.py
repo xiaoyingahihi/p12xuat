@@ -39,23 +39,10 @@ def preprocess_image(img):
     # 2. Grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 3. Blur nhẹ (giảm noise)
-    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+    blur = cv2.GaussianBlur(gray, (5,5),0)
+    thresh = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
 
-    # 4. Adaptive threshold (rất hợp phiếu in)
-    thresh = cv2.adaptiveThreshold(
-        blur,
-        255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        11, 2
-    )
-
-    # 5. Morphology (làm chữ đậm hơn)
-    kernel = np.ones((2,2), np.uint8)
-    dilate = cv2.dilate(thresh, kernel, iterations=1)
-
-    return dilate
+    return thresh
 
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
