@@ -37,9 +37,29 @@ def preprocess_image(img):
         img = cv2.resize(img, (int(w * ratio), int(h * ratio)))
 
     # 2. Grayscale
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = cv2.equalizeHist(img)
-    return img
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # 3. Tăng contrast mạnh hơn (CLAHE)
+    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8,8))
+    gray = clahe.apply(gray)
+
+    # 4. Blur nhẹ
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    # 5. Adaptive threshold (giữ chữ tốt hơn)
+    thresh = cv2.adaptiveThreshold(
+        blur,
+        255,
+        cv2.ADAPTIVE_THRESH_MEAN_C,
+        cv2.THRESH_BINARY,
+        15, 3
+    )
+
+    # 6. Làm chữ đậm hơn
+    kernel = np.ones((2,2), np.uint8)
+    dilate = cv2.dilate(thresh, kernel, iterations=1)
+
+    return dilate
 
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
