@@ -19,14 +19,10 @@ if 'last_processed_file' not in st.session_state:
 if 'current_results' not in st.session_state:
     st.session_state.current_results = None
 
-# --- LOAD MODEL (LIGHT VERSION) ---
+# --- LOAD MODEL (CACHE) ---
 @st.cache_resource
 def load_ai_model():
-    return easyocr.Reader(
-        ['vi','en'],  # ⚠️ nhẹ hơn nhiều, nếu cần vi thì thêm 'vi'
-        gpu=False,
-        verbose=False
-    )
+    return easyocr.Reader(['vi', 'en'], gpu=False, verbose=False)
 
 reader = load_ai_model()
 
@@ -168,7 +164,7 @@ if uploaded_file is not None:
             data = intelligent_extract_logic(results)
 
             for k, v in data.items():
-                st.success(f"{k}: {v}")
+                st.success(f"**{k}**: {v}")
 
             # --- API GOOGLE SHEET ---
             API_URL = "YOUR_WEB_APP_URL"
