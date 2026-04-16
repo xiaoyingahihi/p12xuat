@@ -7,11 +7,11 @@ import pandas as pd
 from io import BytesIO
 import requests
 
-# --- CONFIG UI ---
-st.set_page_config(page_title="AI Phiếu Cân", layout="wide")
-st.title("🚛 Hệ thống AI Trích xuất Phiếu Cân")
+# --- 1. CẤU HÌNH GIAO DIỆN ---
+st.set_page_config(page_title="P12 Trích Xuất Phiếu Cân", layout="wide")
+st.title("🚛 Hệ Thống Trích Xuất Phiếu Cân")
 
-# --- SESSION ---
+# Session state
 if 'data_history' not in st.session_state:
     st.session_state.data_history = []
 if 'last_processed_file' not in st.session_state:
@@ -23,7 +23,7 @@ if 'current_results' not in st.session_state:
 @st.cache_resource
 def load_ai_model():
     return easyocr.Reader(
-        ['en'],  # ⚠️ nhẹ hơn nhiều, nếu cần vi thì thêm 'vi'
+        ['vi','en'],  # ⚠️ nhẹ hơn nhiều, nếu cần vi thì thêm 'vi'
         gpu=False,
         verbose=False
     )
@@ -60,23 +60,42 @@ def run_ocr_cached(img_array):
 
 # --- LOGIC TRÍCH XUẤT ---
 def intelligent_extract_logic(results):
-    raw_texts = [res[1].strip() for res in results if len(res[1]) > 2]
+    raw_texts = [res[1].strip() for res in results]
     full_content = " ".join(raw_texts).upper()
 
     data = {}
 
     dates = re.findall(r'\d{2}/\d{2}/\d{4}', full_content)
-    data["DATE"] = dates[0] if dates else "N/A"
 
-    times = re.findall(r'\d{2}[:.]\d{2}[:.]\d{2}', full_content)
-    data["IN_TIME"] = times[0] if len(times) > 0 else "N/A"
-    data["OUT_TIME"] = times[1] if len(times) > 1 else "N/A"
-
-    truck = re.search(r'(\d{2}[A-Z]\d{5,6})', full_content)
-    data["TRUCK_NO"] = truck.group(1) if truck else "N/A"
-
+    data["COMPANY"] = raw_texts[0]
+    data["ADDRESS"] = raw_texts[1] if len(raw_texts) > 1 else "N/A"
+    #
+    phones = re.findall(r'\(\+84\)\d+-\d+-\d+', full_content)
+    data["TEL"] = phones[0] if len(phones) > 0 else "N/A"
+    data["FAX"] = phones[1] if len(phones) > 1 else "N/A"
+    #
     serial = re.search(r'CSVC[0-9OQ]{4,}', full_content)
     data["SERIAL_NO"] = serial.group(0).replace('O', '0').replace('Q', '0') if serial else "N/A"
+    #
+    truck = re.search(r'(\d{2}[A-Z]\d{5,6})', full_content)
+    data["TRUCK_NO"] = truck.group(1) if truck else "N/A"
+    #
+    for i, txt in enumerate(raw_texts):
+        txt_up = txt.upper()
+
+        if "CARGO TYPE" in txt_up and i + 1 < len(raw_texts):
+            data["CARGO_TYPE"] = raw_texts[i+1]
+
+        if "PIC NAME" in txt_up and i + 1 < len(raw_texts):
+            data["PIC_NAME"] = raw_texts[i+1].replace('l','1').replace('I','1')
+    #
+    data["WEIGHT DATE"] = dates[0] if dates else "N/A"
+
+    full_content = full_content.replace('.', ':')
+    times = re.findall(r'\d{2}:\d{2}:\d{2}', full_content)
+    data["IN_TIME"] = times[0] if len(times) > 0 else "N/A"
+    data["OUT_TIME"] = times[1] if len(times) > 1 else "N/A"
+    #
 
     weights = re.findall(r'(\d{1,3}[,.]\d{3})', full_content)
     if len(weights) >= 3:
@@ -88,21 +107,26 @@ def intelligent_extract_logic(results):
 
     for i, txt in enumerate(raw_texts):
         txt_up = txt.upper()
+        if "WEIGH OPERATOR" in txt_up:
 
-        if "CARGO" in txt_up and i + 1 < len(raw_texts):
-            data["CARGO_TYPE"] = raw_texts[i+1]
+            candidates = []
 
-        if "PIC" in txt_up and i + 1 < len(raw_texts):
-            data["PIC_NAME"] = raw_texts[i+1]
+            # lấy i-1 nếu có
+            if i - 1 >= 0:
+                candidates.append(raw_texts[i - 1])
 
-        if "OPERATOR" in txt_up and i - 1 >= 0:
-            data["OPERATOR"] = raw_texts[i-1]
+            # lấy i+1 nếu có
+            if i + 1 < len(raw_texts):
+                candidates.append(raw_texts[i + 1])
 
-    data["COMPANY"] = raw_texts[0] if len(raw_texts) > 0 else "N/A"
-    data["ADDRESS"] = raw_texts[1] if len(raw_texts) > 1 else "N/A"
+            # chọn cái có độ dài lớn nhất
+            if candidates:
+                data["WEIGH OPERATOR"] = max(candidates, key=lambda x: len(x.strip())).strip()
+            else:
+                data["WEIGH OPERATOR"] = "N/A"
 
+            break
     return data
-
 # --- UI ---
 uploaded_file = st.sidebar.file_uploader("Chọn ảnh phiếu cân", type=["jpg", "png", "jpeg"])
 
