@@ -52,7 +52,7 @@ def preprocess_image(img):
         255,
         cv2.ADAPTIVE_THRESH_MEAN_C,
         cv2.THRESH_BINARY,
-        15, 3
+        11, 2
     )
 
     # 6. Làm chữ đậm hơn
