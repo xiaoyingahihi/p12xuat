@@ -37,10 +37,8 @@ def preprocess_image(img):
         img = cv2.resize(img, (int(w * ratio), int(h * ratio)))
 
     # 2. Grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    blur = cv2.GaussianBlur(gray, (3,3),0)
-    img = cv2.equalizeHist(blur)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.equalizeHist(img)
     return img
 
 # --- OCR CACHE ---
