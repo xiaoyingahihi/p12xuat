@@ -31,7 +31,7 @@ def preprocess_image(img):
     h, w = img.shape[:2]
 
     # 1. Resize nhỏ lại (giảm tải)
-    max_w = 1500
+    max_w = 960
     if w > max_w:
         ratio = max_w / w
         img = cv2.resize(img, (int(w * ratio), int(h * ratio)))
