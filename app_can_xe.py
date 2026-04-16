@@ -26,23 +26,36 @@ def load_ai_model():
 
 reader = load_ai_model()
 
-# --- PREPROCESS IMAGE (GIẢM TẢI) ---
+#giam phan giai
 def preprocess_image(img):
     h, w = img.shape[:2]
 
-    # resize nhỏ lại
+    # 1. Resize nhỏ lại (giảm tải)
     max_w = 800
     if w > max_w:
         ratio = max_w / w
         img = cv2.resize(img, (int(w * ratio), int(h * ratio)))
 
-    # grayscale
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # 2. Grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # tăng contrast
-    img = cv2.equalizeHist(img)
+    # 3. Blur nhẹ (giảm noise)
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    return img
+    # 4. Adaptive threshold (rất hợp phiếu in)
+    thresh = cv2.adaptiveThreshold(
+        blur,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        11, 2
+    )
+
+    # 5. Morphology (làm chữ đậm hơn)
+    kernel = np.ones((2,2), np.uint8)
+    dilate = cv2.dilate(thresh, kernel, iterations=1)
+
+    return dilate
 
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
