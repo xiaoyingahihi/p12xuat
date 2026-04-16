@@ -56,7 +56,7 @@ def preprocess_image(img):
     )
 
     # 6. Làm chữ đậm hơn
-    kernel = np.ones((2,2), np.uint8)
+    kernel = np.ones((1,1), np.uint8)
     dilate = cv2.dilate(thresh, kernel, iterations=1)
 
     return dilate
