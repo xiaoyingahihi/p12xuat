@@ -39,10 +39,17 @@ def preprocess_image(img):
 
     # tăng contrast
     img = cv2.equalizeHist(img)
+    
+    return img
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
 def run_ocr_cached(img_array):
-    return reader.readtext(img_array)
+    return reader.readtext(
+        img_array,
+        detail=1,
+        paragraph=False,
+        batch_size=1
+    )
 
 # --- LOGIC TRÍCH XUẤT ---
 def intelligent_extract_logic(results):
