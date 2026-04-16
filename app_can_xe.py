@@ -39,9 +39,8 @@ def preprocess_image(img):
     # 2. Grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    blur = cv2.GaussianBlur(gray, (5,5),0)
-    thresh = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
-    img = cv2.equalizeHist(thresh)
+    blur = cv2.GaussianBlur(gray, (3,3),0)
+    img = cv2.equalizeHist(blur)
     return img
 
 # --- OCR CACHE ---
