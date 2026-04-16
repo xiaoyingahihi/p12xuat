@@ -3,9 +3,9 @@ import easyocr
 import cv2
 import numpy as np
 import re
+import os
 import pandas as pd
 from io import BytesIO
-import requests
 
 # --- 1. CẤU HÌNH GIAO DIỆN ---
 st.set_page_config(page_title="P12 Trích Xuất Phiếu Cân", layout="wide")
@@ -35,41 +35,14 @@ def preprocess_image(img):
         ratio = max_w / w
         img = cv2.resize(img, (int(w * ratio), int(h * ratio)))
 
-    # 2. Cắt vùng trung tâm (loại bỏ nền bàn vàng)
-    img = img[int(h*0.15):int(h*0.9), int(w*0.05):int(w*0.95)]
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 3. Grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # 4. CLAHE (tăng tương phản mạnh)
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-    gray = clahe.apply(gray)
-
-    # 5. Blur nhẹ
-    blur = cv2.GaussianBlur(gray, (3, 3), 0)
-
-    # 6. Threshold chuẩn cho giấy trắng + nền nhiễu
-    _, thresh = cv2.threshold(
-        blur, 
-        0, 255, 
-        cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    )
-
-    # 7. Làm chữ đậm hơn
-    kernel = np.ones((2,2), np.uint8)
-    result = cv2.dilate(thresh, kernel, iterations=1)
-
-    return result
-
+    # tăng contrast
+    img = cv2.equalizeHist(img)
 # --- OCR CACHE ---
 @st.cache_data(show_spinner=False)
 def run_ocr_cached(img_array):
-    return reader.readtext(
-        img_array,
-        detail=1,
-        paragraph=False,
-        batch_size=1
-    )
+    return reader.readtext(img_array)
 
 # --- LOGIC TRÍCH XUẤT ---
 def intelligent_extract_logic(results):
@@ -140,41 +113,38 @@ def intelligent_extract_logic(results):
 
             break
     return data
+
 # --- UI ---
 uploaded_file = st.sidebar.file_uploader("Chọn ảnh phiếu cân", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
-
-    # giới hạn size
-    if uploaded_file.size > 5 * 1024 * 1024:
-        st.error("Ảnh quá nặng (>5MB)")
-        st.stop()
-
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     img_bgr = cv2.imdecode(file_bytes, 1)
-
-    img_processed = preprocess_image(img_bgr.copy())
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("🖼️ Ảnh gốc")
-        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        st.image(img_rgb, width='stretch')
+        st.subheader("🖼️ Ảnh Đầu Vào")
+        img_org = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(img_gray, (5,5),0)
+        thresh = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
+        st.image(img_org, width='stretch')
 
     with col2:
-        st.subheader("📊 Kết quả AI")
+        st.subheader("📊 Kết quả trích xuất")
 
-        with st.spinner('Đang quét dữ liệu...'):
+        with st.spinner('Hệ thống đang quét...'):
 
+            # ⚡ Chỉ OCR khi file mới
             if st.session_state.last_processed_file != uploaded_file.name:
-                results = run_ocr_cached(img_processed)
+                results = run_ocr_cached(img_bgr.copy())
                 st.session_state.current_results = results
                 st.session_state.last_processed_file = uploaded_file.name
             else:
                 results = st.session_state.current_results
 
-            with st.expander("OCR Raw"):
+            with st.expander("Nội Dung Quét (Thô)"):
                 for res in results:
                     st.write(res[1])
 
@@ -183,24 +153,13 @@ if uploaded_file is not None:
             for k, v in data.items():
                 st.success(f"**{k}**: {v}")
 
-            # --- API GOOGLE SHEET ---
-            API_URL = "YOUR_WEB_APP_URL"
-
-            if st.button("➕ Lưu + Đẩy lên Cloud"):
+            if st.button("➕ Thêm vào danh sách chờ xuất Excel"):
                 st.session_state.data_history.append(data)
+                st.toast("Đã thêm vào danh sách!", icon="✅")
 
-                try:
-                    res = requests.post(API_URL, json=data, timeout=5)
-                    if res.status_code == 200:
-                        st.toast("Đã lưu + gửi cloud!", icon="🚀")
-                    else:
-                        st.warning("Gửi API lỗi")
-                except:
-                    st.warning("Không kết nối được API")
-
-# --- EXPORT ---
+# --- EXPORT EXCEL ---
 st.divider()
-st.subheader("📋 Danh sách phiếu")
+st.subheader("📋 Danh sách phiếu đã quét")
 
 if st.session_state.data_history:
     df = pd.DataFrame(st.session_state.data_history)
@@ -209,17 +168,21 @@ if st.session_state.data_history:
     def to_excel(df):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False)
+            df.to_excel(writer, index=False, sheet_name='Sheet1')
         return output.getvalue()
 
+    excel_data = to_excel(df)
+
     st.download_button(
-        label="📥 Tải Excel",
-        data=to_excel(df),
-        file_name='bao_cao_can_xe.xlsx'
+        label="📥 TẢI FILE EXCEL (.xlsx)",
+        data=excel_data,
+        file_name='bao_cao_can_xe.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    if st.button("🗑️ Xóa hết"):
+    if st.button("🗑️ Xóa hết danh sách"):
         st.session_state.data_history = []
         st.rerun()
 else:
-    st.write("Chưa có dữ liệu")
+    st.write("Chưa có dữ liệu nào được lưu.")
+#C:\Users\VP\AppData\Local\Programs\Python\Python311\python.exe -m streamlit run c:/Users/VP/Documents/Anaconda_XLA/phieu_can_test/app_can_xe.py                                         
