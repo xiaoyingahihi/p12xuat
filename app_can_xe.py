@@ -186,7 +186,7 @@ if uploaded_file is not None:
                 st.success(f"{k}: {v}")
 
             # --- API GOOGLE SHEET ---
-            API_URL = "https://script.google.com/macros/s/AKfycbwqJ78NQv45WPlQ0aRq8flZCapajmqEIpJJD5QL6g-btHRDepx-djq2eGx69hoUKX_NsQ/exec"
+            API_URL = "https://script.google.com/macros/s/AKfycbyMd9Vql0o2RLzhAQaOP2Euta9MAcHebtyCubmue9IzamlLmfy-cyeTTHJImWx4d8kxBg/exec"
 
             if st.button("➕ Lưu + Đẩy lên Cloud"):
                 st.session_state.data_history.append(data)
