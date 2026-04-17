@@ -119,7 +119,7 @@ def intelligent_extract_logic(results):
 
     for i, txt in enumerate(raw_texts):
         txt_up = txt.upper()
-        if "WEIGH_OPERATOR" in txt_up:
+        if "WEIGH OPERATOR" in txt_up:
 
             candidates = []
 
