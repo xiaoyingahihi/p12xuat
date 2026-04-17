@@ -5,6 +5,7 @@ import numpy as np
 import re
 import os
 import pandas as pd
+import requests
 from io import BytesIO
 
 # --- 1. CẤU HÌNH GIAO DIỆN ---
