@@ -101,7 +101,7 @@ def intelligent_extract_logic(results):
         if "PIC NAME" in txt_up and i + 1 < len(raw_texts):
             data["PIC_NAME"] = raw_texts[i+1].replace('l','1').replace('I','1')
     #
-    data["WEIGHT DATE"] = dates[0] if dates else "N/A"
+    data["WEIGHT_DATE"] = dates[0] if dates else "N/A"
 
     full_content = full_content.replace('.', ':')
     times = re.findall(r'\d{2}:\d{2}:\d{2}', full_content)
@@ -119,7 +119,7 @@ def intelligent_extract_logic(results):
 
     for i, txt in enumerate(raw_texts):
         txt_up = txt.upper()
-        if "WEIGH OPERATOR" in txt_up:
+        if "WEIGH_OPERATOR" in txt_up:
 
             candidates = []
 
@@ -133,9 +133,9 @@ def intelligent_extract_logic(results):
 
             # chọn cái có độ dài lớn nhất
             if candidates:
-                data["WEIGH OPERATOR"] = max(candidates, key=lambda x: len(x.strip())).strip()
+                data["WEIGH_OPERATOR"] = max(candidates, key=lambda x: len(x.strip())).strip()
             else:
-                data["WEIGH OPERATOR"] = "N/A"
+                data["WEIGH_OPERATOR"] = "N/A"
 
             break
     return data
