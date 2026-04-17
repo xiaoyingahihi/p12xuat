@@ -157,12 +157,12 @@ if uploaded_file is not None:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("🖼️ Ảnh gốc")
+        st.subheader("🖼️ Ảnh phiếu cân")
         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         st.image(img_rgb, width='stretch')
 
     with col2:
-        st.subheader("📊 Kết quả AI")
+        st.subheader("📊 Kết quả trích xuất")
 
         with st.spinner('Đang quét dữ liệu...'):
 
@@ -176,7 +176,7 @@ if uploaded_file is not None:
             else:
                 results = st.session_state.current_results
 
-            with st.expander("OCR Raw"):
+            with st.expander("Dữ liệu thô được đọc"):
                 for res in results:
                     st.write(res[1])
 
