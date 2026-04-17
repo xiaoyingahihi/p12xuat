@@ -185,12 +185,13 @@ if uploaded_file is not None:
                 st.success(f"{k}: {v}")
 
             # --- API GOOGLE SHEET ---
-            API_URL = "YOUR_WEB_APP_URL"
+            API_URL = "https://script.google.com/macros/s/AKfycbzjBTTCeitvuZGQ__GmKWJNFvlNdUDOVPv6HW2DSV_ALooSOvByhWV7VfCPGMGfBf_lwA/exec"
 
             if st.button("➕ Lưu + Đẩy lên Cloud"):
                 st.session_state.data_history.append(data)
 
                 try:
+                    data["key"] = "csvc"
                     res = requests.post(API_URL, json=data, timeout=5)
                     if res.status_code == 200:
                         st.toast("Đã lưu + gửi cloud!", icon="🚀")
